@@ -23,12 +23,16 @@ public class MetroidvaniaGame : Game
 
     private Matrix? _transformMatrix;
 
-    private Texture2D _heroTexture;
-    private Sprite _idleSprite;
+    private SpriteAtlas _heroSpriteAtlas;
+    private Animator _heroAnimator;
+
+    public static MetroidvaniaGame Current { get; private set; } = default!;
 
     public MetroidvaniaGame()
     {
         _graphicsDeviceManager = new(this);
+
+        Current = this;
     }
 
     private void SpawnPlayer()
@@ -49,8 +53,8 @@ public class MetroidvaniaGame : Game
         SpawnPlayer();
         _playerController = new(_player, _tileMap);
 
-        _heroTexture = Texture2D.FromFile(GraphicsDevice, @"C:\Users\user\source\repos\Metroidvania\Assets\idle(32x32).png");
-        _idleSprite = new(new TextureRegion2D(new Rectangle(0, 0, 32, 32), _heroTexture), new Vector2(0));
+        _heroSpriteAtlas = SpriteDataStore.LoadSpriteAtlas(@"C:\Users\user\source\repos\Metroidvania\Assets\Hero.atlas");
+        _heroAnimator = new(_heroSpriteAtlas.Sprites, 0.15f);
     }
 
     protected override void Update(GameTime gameTime)
@@ -60,14 +64,17 @@ public class MetroidvaniaGame : Game
         if (KeyboardListener.IsDown(Keys.Escape))
             Exit();
 
-        _playerController.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
+        var elapsedSeconds = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+        _playerController.Update(elapsedSeconds);
+        _heroAnimator.Update(elapsedSeconds);
     }
 
     private static Color BackgroundColor = new(110 / 255f, 115 / 255f, 113 / 255f);
 
     private void DrawPlayer(SpriteBatch spriteBatch)
     {
-        spriteBatch.Render(_player.Position, _idleSprite);
+        spriteBatch.Render(_player.Position, _heroAnimator.Frames[_heroAnimator.FrameId]);
     }
 
     protected override void Draw(GameTime gameTime)
